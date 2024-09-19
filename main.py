@@ -1,4 +1,7 @@
 import cv2
+import socket
+import struct
+import pickle
 
 # GStreamer pipeline for CSI camera with fakesink
 def gstreamer_pipeline(
