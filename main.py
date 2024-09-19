@@ -21,37 +21,43 @@ def gstreamer_pipeline(
         "fakesink"
     )
 
+try:
+    # Configure socket for sending
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect(('31.144.96.42', 8080))  # IP and port of remote machine
 
-# Configure socket for sending
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('31.144.96.42', 8080))  # IP and port of remote machine
+    # Open the CSI camera with OpenCV using GStreamer
+    cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 
-# Open the CSI camera with OpenCV using GStreamer
-cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+    # Check if the camera opened successfully
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+        exit()
 
-# Check if the camera opened successfully
-if not cap.isOpened():
-    print("Error: Could not open camera.")
-    exit()
+    # Infinite loop to capture and send frames
+    while True:
+        ret, frame = cap.read()
 
-# Infinite loop to capture and send frames
-while True:
-    ret, frame = cap.read()
+        if not ret:
+            print("Failed to grab frame")
+            break
 
-    if not ret:
-        print("Failed to grab frame")
-        break
+        # Encode frame as JPEG
+        result, frame_encoded = cv2.imencode('.jpg', frame)
 
-    # Encode frame as JPEG
-    result, frame_encoded = cv2.imencode('.jpg', frame)
+        # Serialize the frame
+        data = pickle.dumps(frame_encoded, 0)
+        size = len(data)
 
-    # Serialize the frame
-    data = pickle.dumps(frame_encoded, 0)
-    size = len(data)
+        # Send size of the frame first, then the actual frame
+        client_socket.sendall(struct.pack(">L", size) + data)
 
-    # Send size of the frame first, then the actual frame
-    client_socket.sendall(struct.pack(">L", size) + data)
+except socket.error as e:
+    print(f"Socket error: {e}")
 
-cap.release()
-client_socket.close()
+except Exception as e:
+    print(f"An error occurred: {e}")
 
+finally:
+    cap.release()
+    client_socket.close()
