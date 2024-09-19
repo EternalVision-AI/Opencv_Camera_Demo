@@ -1,9 +1,6 @@
 import cv2
-import socket
-import struct
-import pickle
 
-# GStreamer pipeline for CSI camera
+# GStreamer pipeline for CSI camera with fakesink
 def gstreamer_pipeline(
     capture_width=1280,
     capture_height=720,
@@ -18,8 +15,9 @@ def gstreamer_pipeline(
         "nvvidconv flip-method={flip_method} ! "
         "video/x-raw, format=(string)BGRx ! "
         "videoconvert ! "
-        "appsink"
+        "fakesink"
     )
+
 
 # Configure socket for sending
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -53,3 +51,4 @@ while True:
 
 cap.release()
 client_socket.close()
+
