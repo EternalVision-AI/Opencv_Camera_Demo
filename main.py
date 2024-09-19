@@ -1,11 +1,9 @@
 import cv2
 
-# GStreamer pipeline for CSI camera
+# GStreamer pipeline for CSI camera with fakesink
 def gstreamer_pipeline(
     capture_width=1280,
     capture_height=720,
-    display_width=1280,
-    display_height=720,
     framerate=30,
     flip_method=0,
 ):
@@ -15,20 +13,20 @@ def gstreamer_pipeline(
         f"width=(int){capture_width}, height=(int){capture_height}, "
         f"format=(string)NV12, framerate=(fraction){framerate}/1 ! "
         "nvvidconv flip-method={flip_method} ! "
-        f"video/x-raw, width=(int){display_width}, height=(int){display_height}, format=(string)BGRx ! "
+        "video/x-raw, format=(string)BGRx ! "
         "videoconvert ! "
-        "video/x-raw, format=(string)BGR ! appsink"
+        "fakesink"
     )
 
-# Open the CSI camera using OpenCV with GStreamer
-cap = cv2.VideoCapture(gstreamer_pipeline(flip_method=0), cv2.CAP_GSTREAMER)
+# Open the CSI camera with OpenCV using GStreamer
+cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
 
 # Check if the camera opened successfully
 if not cap.isOpened():
     print("Error: Could not open camera.")
     exit()
 
-# Capture and display frames in a loop
+# Capture and process frames without displaying them
 while True:
     ret, frame = cap.read()
 
@@ -36,13 +34,13 @@ while True:
         print("Failed to grab frame")
         break
 
-    # Display the frame
-    cv2.imshow('Jetson Nano CSI Camera', frame)
+    # Process the frame (e.g., save to file or perform analysis)
+    # Uncomment below line if you want to save frames to disk for testing
+    # cv2.imwrite('frame.jpg', frame)
 
-    # Exit the loop if the 'q' key is pressed
+    # Press 'q' to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Release the camera and close any open windows
 cap.release()
 cv2.destroyAllWindows()
