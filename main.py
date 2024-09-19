@@ -23,7 +23,7 @@ def gstreamer_pipeline(
 
 # Configure socket for sending
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect(('195.201.199.101', 8080))  # IP and port of remote machine
+client_socket.connect(('31.144.0.20', 8080))  # IP and port of remote machine
 
 # Open the CSI camera with OpenCV using GStreamer
 cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
