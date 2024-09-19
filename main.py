@@ -1,6 +1,9 @@
 import cv2
+import socket
+import struct
+import pickle
 
-# GStreamer pipeline for CSI camera with fakesink
+# GStreamer pipeline for CSI camera
 def gstreamer_pipeline(
     capture_width=1280,
     capture_height=720,
@@ -15,8 +18,12 @@ def gstreamer_pipeline(
         "nvvidconv flip-method={flip_method} ! "
         "video/x-raw, format=(string)BGRx ! "
         "videoconvert ! "
-        "fakesink"
+        "appsink"
     )
+
+# Configure socket for sending
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect(('195.201.199.101', 8080))  # IP and port of remote machine
 
 # Open the CSI camera with OpenCV using GStreamer
 cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
@@ -26,23 +33,23 @@ if not cap.isOpened():
     print("Error: Could not open camera.")
     exit()
 
-# Capture and process frames without displaying them
-count = 0
+# Infinite loop to capture and send frames
 while True:
     ret, frame = cap.read()
 
     if not ret:
         print("Failed to grab frame")
         break
-    print("Frames: ", count)
-    # Process the frame (e.g., save to file or perform analysis)
-    # Uncomment below line if you want to save frames to disk for testing
-    # cv2.imwrite('frame.jpg', frame)
 
-    # Press 'q' to exit
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-    count += 1
+    # Encode frame as JPEG
+    result, frame_encoded = cv2.imencode('.jpg', frame)
+
+    # Serialize the frame
+    data = pickle.dumps(frame_encoded, 0)
+    size = len(data)
+
+    # Send size of the frame first, then the actual frame
+    client_socket.sendall(struct.pack(">L", size) + data)
 
 cap.release()
-cv2.destroyAllWindows()
+client_socket.close()
