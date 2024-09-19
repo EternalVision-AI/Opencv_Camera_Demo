@@ -27,13 +27,14 @@ if not cap.isOpened():
     exit()
 
 # Capture and process frames without displaying them
+count = 0
 while True:
     ret, frame = cap.read()
 
     if not ret:
         print("Failed to grab frame")
         break
-
+    print("Frames: ", count)
     # Process the frame (e.g., save to file or perform analysis)
     # Uncomment below line if you want to save frames to disk for testing
     # cv2.imwrite('frame.jpg', frame)
@@ -41,6 +42,7 @@ while True:
     # Press 'q' to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+    count += 1
 
 cap.release()
 cv2.destroyAllWindows()
