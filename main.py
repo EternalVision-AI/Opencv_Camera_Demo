@@ -13,33 +13,30 @@ import cv2
 
 window_title = "USB Camera"
 
-# ASSIGN CAMERA ADRESS to DEVICE HERE!
-pipeline = " ! ".join(["v4l2src device=/dev/video0",
-                       "video/x-raw, width=640, height=480, framerate=30/1",
-                       "videoconvert",
-                       "video/x-raw, format=(string)BGR",
-                       "appsink"
-                       ])
-
-# Sample pipeline for H.264 video, tested on Logitech C920
-h264_pipeline = " ! ".join(["v4l2src device=/dev/video0",
-                            "video/x-h264, width=1280, height=720, framerate=30/1, format=H264",
-                            "avdec_h264",
-                            "videoconvert",
-                            "video/x-raw, format=(string)BGR",
-                            "appsink sync=false"
-                            ])
-
 def show_camera():
-
+    # ASSIGN CAMERA ADDRESS HERE
+    camera_id = "/dev/video0"
     # Full list of Video Capture APIs (video backends): https://docs.opencv.org/3.4/d4/d15/group__videoio__flags__base.html
     # For webcams, we use V4L2
-    video_capture = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
-
+    video_capture = cv2.VideoCapture(camera_id, cv2.CAP_V4L2)
+    """ 
+    # How to set video capture properties using V4L2:
+    # Full list of Video Capture Properties for OpenCV: https://docs.opencv.org/3.4/d4/d15/group__videoio__flags__base.html
+    #Select Pixel Format:
+    # video_capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'YUYV'))
+    # Two common formats, MJPG and H264
+    # video_capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    # Default libopencv on the Jetson is not linked against libx264, so H.264 is not available
+    # video_capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'H264'))
+    # Select frame size, FPS:
+    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    video_capture.set(cv2.CAP_PROP_FPS, 30)
+    """
     if video_capture.isOpened():
         try:
             window_handle = cv2.namedWindow(
-                window_title, cv2.WINDOW_AUTOSIZE)
+                window_title, cv2.WINDOW_AUTOSIZE )
             # Window
             while True:
                 ret_val, frame = video_capture.read()
@@ -59,7 +56,7 @@ def show_camera():
             video_capture.release()
             cv2.destroyAllWindows()
     else:
-        print("Error: Unable to open camera")
+        print("Unable to open camera")
 
 
 if __name__ == "__main__":
