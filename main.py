@@ -1,50 +1,29 @@
 import cv2
 
-# GStreamer pipeline for CSI camera
-def gstreamer_pipeline(
-    capture_width=1280,
-    capture_height=720,
-    framerate=30,
-    flip_method=0,
-):
-    return (
-        "nvarguscamerasrc ! "
-        "video/x-raw(memory:NVMM), "
-        f"width=(int){capture_width}, height=(int){capture_height}, "
-        f"format=(string)NV12, framerate=(fraction){framerate}/1 ! "
-        "nvvidconv flip-method={flip_method} ! "
-        "video/x-raw, format=(string)BGRx ! "
-        "videoconvert ! "
-        "appsink"
-    )
+# Create a VideoCapture object
+cap = cv2.VideoCapture(1)
 
-# Open the CSI camera with OpenCV using GStreamer
-cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
-
-# Check if the camera opened successfully
 if not cap.isOpened():
-    print("Error: Could not open camera. Check GStreamer pipeline and camera connection.")
-    exit()
+    print("Error opening camera")
 
-# Capture and process frames
-count = 0
+# infinite loop until user decides to stop the program execution
 while True:
+    
+    # Capture frame-by-frame
     ret, frame = cap.read()
-
+    
     if not ret:
-        print("Failed to grab frame. Check camera and pipeline.")
+        print("Can't receive frame (stream end?). Exiting ...")
         break
 
-    print("Frames: ", count)
-    # Process the frame (e.g., save to file or perform analysis)
-    # Uncomment below line if you want to save frames to disk for testing
-    # cv2.imwrite('frame.jpg', frame)
+    # Display the resulting frame
+    cv2.imshow('Video Capture', frame)
 
-    # Press 'q' to exit
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # if 'q' is pressed on the keyboard, 
+    # stop capturing frames and close all windows
+    if cv2.waitKey(1) == ord('q'):
         break
 
-    count += 1
-
+# When everything done, release the VideoCapture object
 cap.release()
 cv2.destroyAllWindows()
