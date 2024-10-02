@@ -1,30 +1,49 @@
-import subprocess
+import cv2
+import time
 
-def start_camera_stream():
-    # Define the GStreamer command
-    command = [
-        "gst-launch-1.0",
-        "nvarguscamerasrc", "sensor-id=0",
-        "!", "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1",
-        "!", "nvvidconv",
-        "!", "video/x-raw(memory:NVMM),format=(string)I420",
-        "!", "omxh264enc", "bitrate=3000000",
-        "!", "flvmux",
-        "!", "rtmpsink", "location='rtmp://172.104.157.70:1936/ptz/testcam311'"
-    ]
+def camera_demo():
+    # Open the default camera (usually the first camera, index 0)
+    cap = cv2.VideoCapture("rtmp://172.104.157.70:1936/ptz/testcam311")
 
-    # Start the GStreamer process
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if not cap.isOpened():
+        print("Error: Could not open camera.")
+        return
 
-    try:
-        # Optionally, read stdout and stderr if needed
-        stdout, stderr = process.communicate()
-        print(stdout.decode())
-        print(stderr.decode())
-    except KeyboardInterrupt:
-        # Handle process termination
-        process.terminate()
-        print("Stream stopped.")
+    fps = 0
+    frame_count = 0
+    start_time = time.time()
+
+    while True:
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+        if not ret:
+            print("Error: Could not read frame.")
+            break
+
+        # Increment frame count
+        frame_count += 1
+
+        # Calculate FPS every second
+        if time.time() - start_time >= 1:
+            fps = frame_count
+            frame_count = 0
+            start_time = time.time()
+
+        # Display the FPS on the frame
+        # cv2.putText(frame, f'FPS: {fps}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+
+        # Display the resulting frame
+        # cv2.imshow('Camera Demo', frame)
+        print("FPS: ")
+        print(str(fps))
+
+        # Break the loop on 'q' key press
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Release the capture and destroy all OpenCV windows
+    cap.release()
+    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    start_camera_stream()
+    camera_demo()
