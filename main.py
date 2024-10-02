@@ -3,15 +3,14 @@ import cv2
 def start_camera_stream():
     # Define the GStreamer pipeline for capturing and streaming
     pipeline = (
-        "nvarguscamerasrc sensor-id=0 ! "
-        "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1 ! "
-        "nvvidconv ! "
-        "video/x-raw,format=BGR ! "
-        "tee name=t "
-        "t. ! queue ! appsink drop=1 ! "
-        "t. ! queue ! omxh264enc bitrate=3000000 ! "
-        "flvmux ! rtmpsink location='rtmp://172.104.157.70:1936/ptz/testcam311'"
+        "nvarguscamerasrc sensor-id=0 ! 'video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1' ! nvvidconv ! 'video/x-raw(memory:NVMM), format=(string)I420' ! omxh264enc bitrate=3000000 ! flvmux ! rtmpsink location='rtmp://172.104.157.70:1936/ptz/testcam311'"
+
     )
+
+
+
+
+
 
     # Create a VideoCapture object with the GStreamer pipeline
     cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
