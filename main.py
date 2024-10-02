@@ -37,8 +37,8 @@ def camera_demo():
 
         # Display the resulting frame
         # cv2.imshow('Camera Demo', frame)
-        print("FPS: ")
-        print(str(fps))
+        print("FPS: ", str(fps))
+        print("Frame: ", str(frame.shape))
 
         # Break the loop on 'q' key press
         if cv2.waitKey(1) & 0xFF == ord('q'):
