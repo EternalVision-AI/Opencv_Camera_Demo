@@ -3,7 +3,9 @@ import time
 
 def camera_demo():
     # Open the default camera (usually the first camera, index 0)
+    print("Connecting...")
     cap = cv2.VideoCapture("rtmp://172.104.157.70:1936/ptz/testcam311")
+    print("Connected.")
 
     if not cap.isOpened():
         print("Error: Could not open camera.")
