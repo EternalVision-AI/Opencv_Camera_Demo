@@ -1,64 +1,54 @@
-#!/usr/bin/env python3
-#
-#  USB Camera - Simple
-#
-#  Copyright (C) 2021-22 JetsonHacks (info@jetsonhacks.com)
-#
-#  MIT License
-#
-
-import sys
-
 import cv2
+import subprocess
 
-window_title = "USB Camera"
+def start_camera_stream():
+    # Define the GStreamer pipeline for RTMP streaming
+    rtmp_pipeline = (
+        "nvarguscamerasrc sensor-id=0 ! "
+        "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1 ! "
+        "nvvidconv ! "
+        "video/x-raw,format=BGR ! "
+        "omxh264enc bitrate=3000000 ! "
+        "flvmux ! "
+        "rtmpsink location='rtmp://172.104.157.70:1936/ptz/testcam311'"
+    )
 
-def show_camera():
-    # ASSIGN CAMERA ADDRESS HERE
-    camera_id = "/dev/video0"
-    # Full list of Video Capture APIs (video backends): https://docs.opencv.org/3.4/d4/d15/group__videoio__flags__base.html
-    # For webcams, we use V4L2
-    video_capture = cv2.VideoCapture(camera_id, cv2.CAP_V4L2)
-    """ 
-    # How to set video capture properties using V4L2:
-    # Full list of Video Capture Properties for OpenCV: https://docs.opencv.org/3.4/d4/d15/group__videoio__flags__base.html
-    #Select Pixel Format:
-    # video_capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'YUYV'))
-    # Two common formats, MJPG and H264
-    # video_capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
-    # Default libopencv on the Jetson is not linked against libx264, so H.264 is not available
-    # video_capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'H264'))
-    # Select frame size, FPS:
-    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    video_capture.set(cv2.CAP_PROP_FPS, 30)
-    """
-    if video_capture.isOpened():
-        try:
-            window_handle = cv2.namedWindow(
-                window_title, cv2.WINDOW_AUTOSIZE )
-            # Window
-            while True:
-                ret_val, frame = video_capture.read()
-                # Check to see if the user closed the window
-                # Under GTK+ (Jetson Default), WND_PROP_VISIBLE does not work correctly. Under Qt it does
-                # GTK - Substitute WND_PROP_AUTOSIZE to detect if window has been closed by user
-                if cv2.getWindowProperty(window_title, cv2.WND_PROP_AUTOSIZE) >= 0:
-                    cv2.imshow(window_title, frame)
-                else:
-                    break
-                keyCode = cv2.waitKey(10) & 0xFF
-                # Stop the program on the ESC key or 'q'
-                if keyCode == 27 or keyCode == ord('q'):
-                    break
+    # Start the RTMP streaming process
+    subprocess.Popen(rtmp_pipeline.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-        finally:
-            video_capture.release()
-            cv2.destroyAllWindows()
-    else:
-        print("Unable to open camera")
+    # Define the GStreamer pipeline for OpenCV display
+    display_pipeline = (
+        "nvarguscamerasrc sensor-id=0 ! "
+        "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1 ! "
+        "nvvidconv ! "
+        "video/x-raw,format=BGR ! "
+        "appsink"
+    )
 
+    # Create a VideoCapture object for local display
+    cap = cv2.VideoCapture(display_pipeline, cv2.CAP_GSTREAMER)
+
+    if not cap.isOpened():
+        print("Error: Unable to open camera.")
+        return
+
+    while True:
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+        if not ret:
+            print("Error: Unable to read frame.")
+            break
+
+        # Display the resulting frame
+        cv2.imshow('Camera Stream', frame)
+
+        # Break the loop on 'q' key press
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Release the capture and destroy all OpenCV windows
+    cap.release()
+    cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-
-    show_camera()
+    start_camera_stream()
