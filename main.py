@@ -4,7 +4,7 @@ import pickle
 import struct
 
 def camera_demo():
-    # Open the default camera (usually the first camera, index 0)
+    # Open the default camera
     print("Connecting...")
     cap = cv2.VideoCapture('rtmp://172.104.157.70:1936/ptz/testcam311')
 
@@ -30,8 +30,10 @@ def camera_demo():
         data = pickle.dumps(frame)
         # Send the frame size first
         sock.sendto(struct.pack("L", len(data)), (udp_ip, udp_port))
-        # Send the actual frame data
-        sock.sendto(data, (udp_ip, udp_port))
+
+        # Send the actual frame data in chunks
+        for i in range(0, len(data), 4096):  # Adjust chunk size as needed
+            sock.sendto(data[i:i + 4096], (udp_ip, udp_port))
 
         print("Frame sent")
 
