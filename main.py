@@ -31,10 +31,11 @@ def camera_demo():
         # Send the frame size first
         sock.sendto(struct.pack("L", len(data)), (udp_ip, udp_port))
 
-        # Send the actual frame data in chunks
         for i in range(0, len(data), 4096):  # Adjust chunk size as needed
-            sock.sendto(data[i:i + 4096], (udp_ip, udp_port))
-
+            try:
+                sock.sendto(data[i:i + 4096], (udp_ip, udp_port))
+            except Exception as e:
+                print(f"Error sending frame data: {e}")
         print("Frame sent")
 
         # Break the loop on 'q' key press
