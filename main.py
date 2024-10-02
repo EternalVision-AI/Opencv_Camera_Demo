@@ -1,5 +1,7 @@
 import cv2
-import time
+import socket
+import pickle
+import struct
 
 def camera_demo():
     # Open the default camera (usually the first camera, index 0)
@@ -12,9 +14,10 @@ def camera_demo():
     else:
         print("Connected.")
 
-    fps = 0
-    frame_count = 0
-    start_time = time.time()
+    # Set up UDP socket
+    udp_ip = "178.133.56.254"  # Change to the receiver's IP address
+    udp_port = 12345           # Change to your desired port
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     while True:
         # Capture frame-by-frame
@@ -23,29 +26,22 @@ def camera_demo():
             print("Error: Could not read frame.")
             break
 
-        # Increment frame count
-        frame_count += 1
+        # Serialize the frame
+        data = pickle.dumps(frame)
+        # Send the frame size first
+        sock.sendto(struct.pack("L", len(data)), (udp_ip, udp_port))
+        # Send the actual frame data
+        sock.sendto(data, (udp_ip, udp_port))
 
-        # Calculate FPS every second
-        if time.time() - start_time >= 1:
-            fps = frame_count
-            frame_count = 0
-            start_time = time.time()
-
-        # Display the FPS on the frame
-        # cv2.putText(frame, f'FPS: {fps}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-
-        # Display the resulting frame
-        # cv2.imshow('Camera Demo', frame)
-        print("FPS: ", str(fps))
-        print("Frame: ", str(frame.shape))
+        print("Frame sent")
 
         # Break the loop on 'q' key press
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    # Release the capture and destroy all OpenCV windows
+    # Release the capture
     cap.release()
+    sock.close()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
