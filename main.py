@@ -1,32 +1,20 @@
 import cv2
-import subprocess
 
 def start_camera_stream():
-    # Define the GStreamer pipeline for RTMP streaming
-    rtmp_pipeline = (
+    # Define the GStreamer pipeline for capturing and streaming
+    pipeline = (
         "nvarguscamerasrc sensor-id=0 ! "
         "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1 ! "
         "nvvidconv ! "
         "video/x-raw,format=BGR ! "
-        "omxh264enc bitrate=3000000 ! "
-        "flvmux ! "
-        "rtmpsink location='rtmp://172.104.157.70:1936/ptz/testcam311'"
+        "tee name=t "
+        "t. ! queue ! appsink drop=1 ! "
+        "t. ! queue ! omxh264enc bitrate=3000000 ! "
+        "flvmux ! rtmpsink location='rtmp://172.104.157.70:1936/ptz/testcam311'"
     )
 
-    # Start the RTMP streaming process
-    subprocess.Popen(rtmp_pipeline.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    # Define the GStreamer pipeline for OpenCV display
-    display_pipeline = (
-        "nvarguscamerasrc sensor-id=0 ! "
-        "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1 ! "
-        "nvvidconv ! "
-        "video/x-raw,format=BGR ! "
-        "appsink"
-    )
-
-    # Create a VideoCapture object for local display
-    cap = cv2.VideoCapture(display_pipeline, cv2.CAP_GSTREAMER)
+    # Create a VideoCapture object with the GStreamer pipeline
+    cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
     if not cap.isOpened():
         print("Error: Unable to open camera.")
